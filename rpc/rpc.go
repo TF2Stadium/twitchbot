@@ -29,12 +29,12 @@ func StartRPC() {
 }
 
 func (TwitchBot) Join(channel string, _ *struct{}) error {
-	irc.Conn.Join("#" + channel)
+	irc.Join(channel)
 	return nil
 }
 
 func (TwitchBot) Leave(channel string, _ *struct{}) error {
-	irc.Conn.Part("#" + channel)
+	irc.Leave(channel)
 	return nil
 }
 
