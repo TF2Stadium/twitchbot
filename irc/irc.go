@@ -11,25 +11,23 @@ import (
 )
 
 var (
-	Conn     *client.Conn
+	conn     *client.Conn
 	mapMu    = new(sync.RWMutex)
 	lastSaid = make(map[string]time.Time)
 )
 
 func Connect() {
-	config.SetupConstants()
-
-	Conn = client.SimpleClient(config.Constants.TwitchNick)
-	if err := Conn.ConnectTo("irc.twitch.tv", config.Constants.TwitchPassword); err != nil {
+	conn = client.SimpleClient(config.Constants.TwitchNick)
+	if err := conn.ConnectTo("irc.twitch.tv", config.Constants.TwitchPassword); err != nil {
 		log.Fatal(err)
 	}
 
 	disconnected := make(chan struct{})
-	Conn.HandleFunc("disconnected", func(c *client.Conn, l *client.Line) {
+	conn.HandleFunc("disconnected", func(c *client.Conn, l *client.Line) {
 		close(disconnected)
 	})
 
-	Conn.HandleFunc("PRIVMSG", func(conn *client.Conn, line *client.Line) {
+	conn.HandleFunc("PRIVMSG", func(conn *client.Conn, line *client.Line) {
 		if !line.Public() {
 			return
 		}
@@ -49,6 +47,7 @@ func Connect() {
 			if line.Public() && line.Target()[0] == '#' {
 				lobbyURL := database.GetCurrentLobby(line.Target()[1:])
 				if lobbyURL == "" {
+					conn.Privmsg(line.Target(), "none")
 					return
 				}
 				conn.Privmsg(line.Target(), lobbyURL)
@@ -64,15 +63,69 @@ func Connect() {
 }
 
 func Say(text, channel string) {
+	if !hasJoined(channel) {
+		return
+	}
+
 	mapMu.RLock()
-	duration := time.Since(lastSaid[channel])
+	last, ok := lastSaid[channel]
 	mapMu.RUnlock()
 
-	time.Sleep(duration)
+	if ok {
+		duration := time.Since(last)
+		if duration > 10*time.Second {
+			time.Sleep(duration - 10*time.Second)
+		}
+	}
 
 	mapMu.Lock()
 	lastSaid[channel] = time.Now()
 	mapMu.Unlock()
 
-	Conn.Privmsg(channel, text)
+	conn.Privmsg("#"+channel, text)
+}
+
+var (
+	joinedMu       = new(sync.RWMutex)
+	joinedChannels []string
+)
+
+func hasJoined(channel string) bool {
+	joinedMu.RLock()
+	defer joinedMu.RUnlock()
+	for _, c := range joinedChannels {
+		if c == channel {
+			return true
+		}
+	}
+
+	return false
+}
+
+func Join(channel string) {
+	if hasJoined(channel) {
+		return
+	}
+
+	conn.Join("#" + channel)
+
+	joinedMu.Lock()
+	joinedChannels = append(joinedChannels, channel)
+	joinedMu.Unlock()
+}
+
+func Leave(channel string) {
+	if !hasJoined(channel) {
+		return
+	}
+
+	conn.Part("#" + channel)
+
+	joinedMu.Lock()
+	for i, c := range joinedChannels {
+		if c == channel {
+			joinedChannels = append(joinedChannels[:i], joinedChannels[i+1:]...)
+		}
+	}
+	joinedMu.Unlock()
 }
