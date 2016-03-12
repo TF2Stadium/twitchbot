@@ -47,7 +47,7 @@ func Connect() {
 			if line.Public() && line.Target()[0] == '#' {
 				lobbyURL := database.GetCurrentLobby(line.Target()[1:])
 				if lobbyURL == "" {
-					conn.Privmsg(line.Target(), "none")
+					conn.Privmsg(line.Target(), line.Target()[1:]+" isn't in any lobby right now")
 					return
 				}
 				conn.Privmsg(line.Target(), lobbyURL)
