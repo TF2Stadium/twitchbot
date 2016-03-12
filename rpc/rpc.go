@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/rpc"
+	"net/url"
 
 	"github.com/TF2Stadium/twitchbot/config"
 	"github.com/TF2Stadium/twitchbot/irc"
@@ -43,6 +44,8 @@ func (TwitchBot) Announce(action struct {
 	LobbyID uint
 }, _ *struct{}) error {
 
-	irc.Say(fmt.Sprintf("%s/lobby/%d", config.Constants.FrontendURL, action.LobbyID), action.Channel)
+	lobbyURL, _ := url.Parse(config.Constants.FrontendURL)
+	lobbyURL.Path = fmt.Sprintf("lobby/%d", action.LobbyID)
+	irc.Say(action.Channel+" just joined "+lobbyURL.String(), action.Channel)
 	return nil
 }
