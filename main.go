@@ -12,7 +12,7 @@ func main() {
 	log.SetFlags(log.Lshortfile)
 	config.SetupConstants()
 
-	irc.Connect()
 	database.Connect()
+	irc.Connect()
 	rpc.StartRPC()
 }
