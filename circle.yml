@@ -1,5 +1,6 @@
 machine:
-  - docker
+  services:
+    - docker
 
 deployment:
   master:
