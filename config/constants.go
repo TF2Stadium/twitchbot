@@ -1,6 +1,9 @@
 package config
 
 import (
+	"log"
+	"net/url"
+
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -23,4 +26,8 @@ var Constants config
 
 func SetupConstants() {
 	envconfig.MustProcess("TWITCHBOT", &Constants)
+	_, err := url.Parse(Constants.FrontendURL)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
