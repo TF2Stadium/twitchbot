@@ -19,7 +19,7 @@ type config struct {
 	DBUsername string `envconfig:"DATABASE_USERNAME" default:"tf2stadium"`
 	DBPassword string `envconfig:"DATABASE_PASSWORD" default:"dickbutt"`
 
-	FrontendURL string `envconfig:"FRONTEND_URL"`
+	FrontendURL string `envconfig:"FRONTEND_URL" required:"true"`
 }
 
 var Constants config
