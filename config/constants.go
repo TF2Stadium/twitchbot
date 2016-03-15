@@ -26,8 +26,10 @@ var Constants config
 
 func SetupConstants() {
 	envconfig.MustProcess("TWITCHBOT", &Constants)
-	_, err := url.Parse(Constants.FrontendURL)
+	u, err := url.Parse(Constants.FrontendURL)
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Printf("Frontend URL: %s", u.String())
 }
